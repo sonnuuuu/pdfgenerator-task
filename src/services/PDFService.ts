@@ -6,21 +6,31 @@ import { Content, isImageContent, isTextContent } from './PDFContent';
 export default async function createPDF(filePath: string) {
     const pdfDoc = await PDFDocument.create();
 
-    await createFirstPage(pdfDoc);
+    await createFirstPage(pdfDoc);   
     await createSecondPage(pdfDoc);
+    await createThirdPage(pdfDoc);
 
     await save(filePath, pdfDoc);
 }
 
-async function createFirstPage(pdfDoc: PDFDocument) {
+async function createFirstPage(pdfDoc: PDFDocument) { //adds a new page to the PDF and adds a block of text to this page
     const page = pdfDoc.addPage();
     await addPageContent('If you look in the dictionary under perfectionist you see Henry Selick correcting the definition of perfectionist in the dictionary. I mean, he is so meticulous. DON DONNNNNNNNNNNN ', page, pdfDoc);
 }
 
-async function createSecondPage(pdfDoc: PDFDocument) {
+async function createSecondPage(pdfDoc: PDFDocument) {  // also adds a new page to the PDF, but it adds an image instead of text. 
+    const page = pdfDoc.addPage();
+    const imagePath = path.join(__dirname, '..', '..', 'images', 'channel.png');
+    const imageBuffer = fs.readFileSync(imagePath); // read the image file from the file system
+    await addPageContent(imageBuffer, page, pdfDoc);
+}
+
+
+async function createThirdPage(pdfDoc: PDFDocument) {
     const page = pdfDoc.addPage();
     const imagePath = path.join(__dirname, '..', '..', 'images', 'channel.png');
     const imageBuffer = fs.readFileSync(imagePath);
+    await addPageContent('Some text content', page, pdfDoc);
     await addPageContent(imageBuffer, page, pdfDoc);
 }
 
@@ -34,16 +44,16 @@ async function createSecondPage(pdfDoc: PDFDocument) {
 // }
 
 async function addPageContent(content: Content, page: PDFPage, pdfDoc: PDFDocument) {
-    if (isTextContent(content)) {
+    if (isTextContent(content)) {  // check the type of content
         addParagraph(content, page, pdfDoc);
     } else if (isImageContent(content)) {
         addImage(content, page, pdfDoc);
     } else {
-        throw new Error('Unknown content type');
+        throw new Error('Unknown content type');  //throws an error with the message 'Unknown content type' jab kuch nahi hoga
     }
 }
 
-async function addImage(content: Buffer, page: PDFPage, pdfDoc: PDFDocument) {
+async function addImage(content: Buffer, page: PDFPage, pdfDoc: PDFDocument) {  //embeds the image into the PDF using pdfDoc.embedPng(content).
     const embeddedImage = await pdfDoc.embedPng(content);
     const imageDimension = embeddedImage.scale(0.7);
     page.drawImage(embeddedImage, {
@@ -68,7 +78,7 @@ async function addText(text: string, page: PDFPage, pdfDoc: PDFDocument) {
     });
 }
 
-async function addParagraph(text: string, page: PDFPage, pdfDoc: PDFDocument) {
+async function addParagraph(text: string, page: PDFPage, pdfDoc: PDFDocument) { // splits the text into words and constructs lines by adding words until the line exceeds
     const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
     const fontSize = 12;
     const lineHeight = fontSize + 2;
